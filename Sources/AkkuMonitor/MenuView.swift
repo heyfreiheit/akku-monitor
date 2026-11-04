@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MenuLabel: View {
     @EnvironmentObject var m: Monitor
-    @AppStorage("menuMode") private var mode = "watt"
+    @AppStorage("menuMode") private var mode = "both"
     @AppStorage("didShowWindow") private var didShowWindow = false
     @Environment(\.openWindow) private var openWindow
 
@@ -15,10 +15,11 @@ struct MenuLabel: View {
             Image(systemName: icon(r))
             switch mode {
             case "pct": Text(pctText)
-            case "both": Text("\(wattText) · \(pctText)")
+            case "both": Text(pctText.isEmpty ? wattText : "\(pctText) · \(wattText)")
             default: Text(wattText)
             }
         }
+        .monospacedDigit()
         .onReceive(NotificationCenter.default.publisher(for: .openMainWindow)) { _ in
             openWindow(id: "main")
             NSApp.activate()
@@ -48,6 +49,7 @@ struct MenuLabel: View {
 
 struct MenuContent: View {
     @EnvironmentObject var m: Monitor
+    @AppStorage("menuMode") private var menuMode = "both"
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -106,6 +108,16 @@ struct MenuContent: View {
                 }
             }
             Divider()
+            HStack(spacing: 8) {
+                Text("Menüleiste zeigt").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Picker("Menüleiste zeigt", selection: $menuMode) {
+                    Text("Prozent").tag("pct")
+                    Text("Watt").tag("watt")
+                    Text("Beides").tag("both")
+                }
+                .pickerStyle(.segmented).labelsHidden().controlSize(.small).frame(width: 190)
+            }
             HStack {
                 Button("Analyse öffnen") {
                     openWindow(id: "main")

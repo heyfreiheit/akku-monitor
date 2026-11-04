@@ -17,7 +17,7 @@ Gespeichert wird ein Minutenmittel für 60 Tage in `~/Library/Application Suppor
 
 ## Was sie zeigt
 
-- **Menüleiste:** aktuelle Watt (oder Prozent), Klick öffnet Verbrauch, Restlaufzeit, Aufteilung, Top-Apps und Wachhalter.
+- **Menüleiste:** Ladestand in Prozent und aktuelle Watt (umschaltbar direkt im Menü auf nur Prozent oder nur Watt), Klick öffnet Verbrauch, Restlaufzeit, Aufteilung, Top-Apps und Wachhalter.
 - **Übersicht:** Kennzahlen, automatische Diagnose mit Empfehlungen, Leistung der letzten 24 Stunden.
 - **Verlauf:** Ladestand, gestapelte Leistung nach Bereich, Akku-Sitzungen mit Ø-Watt und hochgerechneter Laufzeit.
 - **Apps:** Prozessor-Energie pro App in Wh, wahlweise nur Akkubetrieb.

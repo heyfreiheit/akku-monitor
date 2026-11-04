@@ -426,14 +426,14 @@ struct SettingsView: View {
     @AppStorage("alertWatts") private var alertWatts = 20.0
     @AppStorage("alertAppWatts") private var alertAppWatts = 4.0
     @AppStorage("alertTabWatts") private var alertTabWatts = 1.5
-    @AppStorage("menuMode") private var menuMode = "watt"
+    @AppStorage("menuMode") private var menuMode = "both"
     @State private var loginItem = SMAppService.mainApp.status == .enabled
 
     var body: some View {
         Form {
             Picker("Menüleiste zeigt", selection: $menuMode) {
-                Text("Watt").tag("watt")
                 Text("Prozent").tag("pct")
+                Text("Watt").tag("watt")
                 Text("Beides").tag("both")
             }
             Toggle("Beim Anmelden starten", isOn: $loginItem)
