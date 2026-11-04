@@ -22,6 +22,7 @@ struct BatteryReading {
     var adapterName: String?
 
     /// Nennspannung der 3-Zellen-Packs in MacBook Pros.
+    /// Nennspannung der Akkus in Apple-Silicon-MacBooks (Air und Pro liegen alle bei 11,4 bis 11,7 V).
     static let nominalVoltage = 11.6
 
     var batteryW: Double { voltage * amperage }

@@ -8,23 +8,28 @@ struct Finding: Identifiable {
     let detail: String
 }
 
-/// Übersetzt die Messwerte in klare Aussagen. Schwellen orientieren sich an typischen Werten
-/// eines 16"-MacBook Pro mit M4 Max (100-Wh-Akku): leichte Büroarbeit 5 bis 9 W, Browser mit Video 8 bis 14 W.
+/// Übersetzt die Messwerte in klare Aussagen. Die Verbrauchs-Schwellen hängen an der Akkugröße:
+/// Bei leichter Arbeit verliert ein Apple-Silicon-MacBook etwa 5 bis 9 % pro Stunde
+/// (16" MacBook Pro mit 100 Wh: 5 bis 9 W, MacBook Air mit 53 Wh: rund 3 bis 5 W).
 @MainActor
 enum Diagnosis {
     static func findings(_ m: Monitor) -> [Finding] {
         var out: [Finding] = []
         let week = Date().addingTimeInterval(-7 * 86400)
         let fullWh = m.reading?.fullWh ?? 90
+        // Bezug ist die Neu-Kapazität, damit ein gealterter Akku die Schwellen nicht verschiebt.
+        let designWh = (m.reading?.designWh).flatMap { $0 > 10 ? $0 : nil } ?? fullWh
+        let normalLow = designWh * 0.05, normalHigh = designWh * 0.09, high = designWh * 0.15
+        let normalText = "Bei leichter Arbeit sind auf deinem Mac etwa \(Fmt.num(normalLow, 0)) bis \(Fmt.num(normalHigh, 0)) W normal"
 
         // 1. Verbrauch im Akkubetrieb
         if let avg = m.batteryAverage(since: week) {
             let runtime = fullWh / avg.watts
             let base = "Im Akkubetrieb ziehst du im Schnitt \(Fmt.watts(avg.watts)) (gemessen über \(Fmt.hours(avg.hours))). Mit voller Ladung wären das rund \(Fmt.hours(runtime)) Laufzeit."
-            if avg.watts > 15 {
-                out.append(Finding(level: .serious, title: "Dein Verbrauch ist hoch", detail: base + " Bei leichter Arbeit sind 5 bis 9 W normal, also 10 bis 18 Stunden."))
-            } else if avg.watts > 9 {
-                out.append(Finding(level: .warning, title: "Dein Verbrauch ist leicht erhöht", detail: base + " Bei leichter Arbeit sind 5 bis 9 W normal."))
+            if avg.watts > high {
+                out.append(Finding(level: .serious, title: "Dein Verbrauch ist hoch", detail: base + " \(normalText), also \(Fmt.hours(fullWh / normalHigh)) bis \(Fmt.hours(fullWh / normalLow))."))
+            } else if avg.watts > normalHigh {
+                out.append(Finding(level: .warning, title: "Dein Verbrauch ist leicht erhöht", detail: base + " \(normalText)."))
             } else {
                 out.append(Finding(level: .good, title: "Dein Verbrauch ist normal", detail: base))
             }
@@ -118,7 +123,7 @@ enum Diagnosis {
             }
         }
         if !(m.live.last?.lpm ?? true), let avg = m.batteryAverage(since: week), avg.watts > 9 {
-            out.append(Finding(level: .info, title: "Stromsparmodus ausprobieren", detail: "Systemeinstellungen › Batterie › Stromsparmodus „Nur bei Batteriebetrieb“. Der M4 Max bleibt damit schnell genug für Browser, Mails und Schnitt-Vorschau und spart spürbar."))
+            out.append(Finding(level: .info, title: "Stromsparmodus ausprobieren", detail: "Systemeinstellungen › Batterie › Stromsparmodus „Nur bei Batteriebetrieb“. Der Mac bleibt damit schnell genug für Browser, Mails und Schnitt-Vorschau und spart spürbar."))
         }
         if m.externalDisplays > 0 {
             out.append(Finding(level: .info, title: "Externer Monitor angeschlossen", detail: "Ein externer Bildschirm lässt Grafik und Display-Chip dauerhaft mitlaufen. Auf Akku kostet das schnell 3 bis 6 W extra."))
