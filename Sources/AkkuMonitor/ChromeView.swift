@@ -43,10 +43,15 @@ struct ChromeView: View {
     // MARK: Tabs
 
     @ViewBuilder private var tabsPanel: some View {
-        let list = m.tabAverages().filter { $0.watts >= 0.01 }
+        let all = m.tabAverages()
+        let list = all.filter { $0.watts >= 0.05 }
+        let idle = all.count - list.count
         Panel {
             SectionHeader(title: "Tabs nach Verbrauch", note: "Mittel der letzten 5 Minuten. Alles ab 1 W ist auf Akku spürbar.")
-            if list.isEmpty {
+            if list.isEmpty && idle > 0 {
+                Text("Alle \(idle) wachen Tabs sind gerade fast im Leerlauf (unter 0,05 W). Spannend wird es, wenn Videos, Meetings oder Web-Apps laufen.")
+                    .foregroundStyle(.secondary)
+            } else if list.isEmpty {
                 EmptyHint(text: "Die Tabs werden gerade zugeordnet. Nach etwa einer Minute stehen hier die ersten Werte.")
             } else {
                 let maxW = max(list.first?.watts ?? 1, 0.5)
@@ -55,6 +60,9 @@ struct ChromeView: View {
                         TabRow(t: t, maxW: maxW)
                         Divider().opacity(0.5)
                     }
+                }
+                if idle > 0 {
+                    Text("Dazu \(idle) \(idle == 1 ? "Tab" : "Tabs") fast im Leerlauf (unter 0,05 W).").font(.caption).foregroundStyle(.secondary)
                 }
             }
         }

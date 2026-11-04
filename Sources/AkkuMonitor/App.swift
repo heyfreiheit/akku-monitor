@@ -28,7 +28,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         Task { @MainActor in Monitor.shared.start() }
+        // Bei SIGTERM (z. B. beim Neubauen) noch sichern, sonst gehen bis zu 5 Minuten App-Werte verloren.
+        signal(SIGTERM, SIG_IGN)
+        let src = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        src.setEventHandler {
+            MainActor.assumeIsolated { Monitor.shared.flushMinute(); Monitor.shared.saveApps() }
+            exit(0)
+        }
+        src.resume()
+        termSource = src
     }
+    private var termSource: DispatchSourceSignal?
 
     /// Erneutes Öffnen über Finder, Spotlight oder Dock zeigt das Analysefenster.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

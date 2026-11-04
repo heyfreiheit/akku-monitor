@@ -181,6 +181,7 @@ enum Fmt {
 
     static func wh(_ v: Double) -> String {
         if v == 0 { return "0 Wh" }
+        if v < 0.001 { return "< 1 mWh" }
         if v < 0.1 { return "\(num(v * 1000, 0)) mWh" }
         return "\(num(v, v < 10 ? 1 : 0)) Wh"
     }
