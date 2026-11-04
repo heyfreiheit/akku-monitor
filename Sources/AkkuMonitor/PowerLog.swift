@@ -121,7 +121,7 @@ enum Assertions {
         "PreventUserIdleSystemSleep", "NoIdleSleepAssertion", "PreventSystemSleep",
         "NoDisplaySleepAssertion", "PreventUserIdleDisplaySleep",
     ]
-    private static let ignoredProcesses: Set<String> = ["powerd", "WindowServer", "coreaudiod", "sharingd", "bluetoothd", "hidd"]
+    private static let ignoredProcesses: Set<String> = ["powerd", "WindowServer", "coreaudiod", "sharingd", "bluetoothd", "hidd", "runningboardd", "useractivityd"]
 
     static func load() -> [SleepBlocker] {
         let text = Shell.run("/usr/bin/pmset", ["-g", "assertions"])

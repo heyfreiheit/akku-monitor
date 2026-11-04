@@ -19,6 +19,10 @@ struct MenuLabel: View {
             default: Text(wattText)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openMainWindow)) { _ in
+            openWindow(id: "main")
+            NSApp.activate()
+        }
         .task {
             if !didShowWindow {
                 didShowWindow = true
@@ -135,7 +139,7 @@ struct MenuContent: View {
     }
 
     @ViewBuilder private var topApps: some View {
-        let apps = Array(m.liveApps.prefix(5))
+        let apps = Array(m.liveApps.filter { $0.watts >= 0.05 }.prefix(5))
         VStack(alignment: .leading, spacing: 5) {
             Text("Größte Verbraucher (Prozessor)").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             if apps.isEmpty {

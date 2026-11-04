@@ -29,4 +29,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         Task { @MainActor in Monitor.shared.start() }
     }
+
+    /// Erneutes Öffnen über Finder, Spotlight oder Dock zeigt das Analysefenster.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        NotificationCenter.default.post(name: .openMainWindow, object: nil)
+        return true
+    }
+}
+
+extension Notification.Name {
+    static let openMainWindow = Notification.Name("openMainWindow")
 }

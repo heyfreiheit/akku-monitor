@@ -244,7 +244,7 @@ final class ProcessEnergySampler {
         "mds": "Spotlight-Indexierung", "photoanalysisd": "Fotos-Analyse", "mediaanalysisd": "Fotos-Analyse",
         "photolibraryd": "Fotos-Mediathek", "bird": "iCloud Drive", "cloudd": "iCloud Drive", "fileproviderd": "iCloud Drive",
         "backupd": "Time Machine", "softwareupdated": "Softwareupdate", "corespotlightd": "Spotlight-Indexierung",
-        "node": "Node.js", "python3": "Python", "Python": "Python",
+        "node": "Node.js", "claude": "Claude Code", "python3": "Python", "Python": "Python",
     ]
 
     static func allPids() -> [pid_t] {

@@ -162,9 +162,13 @@ final class Monitor: ObservableObject {
         let from = Date().addingTimeInterval(-range)
         let longData = ChartData.buckets(history + live.suffix(6), from: from, step: ChartData.step(for: range))
         if range > 3 * 3600, longData.filter({ $0.sysW > 0 }).count >= 6 { return longData }
-        let liveStep: TimeInterval = range <= 3 * 3600 ? 30 : 60
-        let shortData = ChartData.buckets(live, from: from, step: liveStep)
-        return shortData.count >= longData.count || range <= 3 * 3600 ? shortData : longData
+        // Wenig Daten: Minutenwerte in feinem Raster, bei kurzen Zeiträumen die 10-Sekunden-Werte.
+        let minuteData = ChartData.buckets(history + live.suffix(6), from: from, step: 60)
+        let liveData = ChartData.buckets(live, from: from, step: 30)
+        if range <= 3 * 3600, live.first.map({ $0.t <= from.addingTimeInterval(900) }) == true || liveData.count >= minuteData.count * 2 {
+            return liveData
+        }
+        return minuteData.count >= 3 ? minuteData : liveData
     }
 
     /// Geschätzte Restlaufzeit bei aktuellem Verbrauch (Mittel der letzten 5 Minuten).

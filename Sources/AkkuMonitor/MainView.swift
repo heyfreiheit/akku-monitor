@@ -97,7 +97,7 @@ struct OverviewView: View {
                               note: "Fahr mit der Maus über das Diagramm für Details. Flächen fallen auf null, wenn der Mac schläft.")
                 let data = m.powerSeries(range: 86400)
                 if data.count > 2 {
-                    PowerChart(samples: data, height: 240)
+                    PowerChart(samples: data, height: 240, domain: Date().addingTimeInterval(-86400)...Date())
                 } else {
                     EmptyHint(text: "Die App sammelt gerade die ersten Messwerte. In ein paar Minuten steht hier der Verlauf.")
                 }
@@ -140,12 +140,12 @@ struct HistoryView: View {
             Panel {
                 SectionHeader(title: "Ladestand", note: "Graue Flächen: am Netzteil. Vor dem ersten Start der App stammen die Punkte aus dem macOS-Energieprotokoll.")
                 let pts = chargePoints(from: from, step: step)
-                if pts.count > 1 { ChargeChart(points: pts, height: 180) } else { EmptyHint(text: "Noch keine Daten für diesen Zeitraum.") }
+                if pts.count > 1 { ChargeChart(points: pts, height: 180, domain: from...Date()) } else { EmptyHint(text: "Noch keine Daten für diesen Zeitraum.") }
             }
 
             Panel {
                 SectionHeader(title: "Leistung nach Bereich")
-                if power.count > 2 { PowerChart(samples: power, height: 240) } else { EmptyHint(text: "Noch keine Messwerte für diesen Zeitraum.") }
+                if power.count > 2 { PowerChart(samples: power, height: 240, domain: from...Date()) } else { EmptyHint(text: "Noch keine Messwerte für diesen Zeitraum.") }
                 PartLegend()
             }
 
@@ -287,7 +287,7 @@ struct AppsView: View {
 
             Panel {
                 SectionHeader(title: "Gerade jetzt", note: "Mittel der letzten 5 Minuten")
-                let live = m.appAverages().prefix(12)
+                let live = m.appAverages().filter { $0.watts >= 0.05 }.prefix(12)
                 if live.isEmpty { EmptyHint(text: "Messe …") }
                 ForEach(Array(live)) { a in
                     HStack(spacing: 10) {
@@ -363,7 +363,7 @@ struct HealthView: View {
                     HStack(alignment: .top, spacing: 24) {
                         Metric(label: "Gesundheit", value: "\(Int(r.healthPct)) %", sub: "aktuelle Kapazität zu Neuzustand")
                         Divider().frame(height: 56)
-                        Metric(label: "Ladezyklen", value: "\(r.cycles)", sub: "Apple garantiert 1000")
+                        Metric(label: "Ladezyklen", value: "\(r.cycles)", sub: "ausgelegt auf 1000")
                         Divider().frame(height: 56)
                         Metric(label: "Temperatur", value: "\(Fmt.num(r.tempC)) °C", sub: r.tempC > 40 ? "warm" : "normal")
                         Divider().frame(height: 56)

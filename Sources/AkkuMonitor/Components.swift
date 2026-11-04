@@ -93,6 +93,7 @@ enum ChartData {
 struct PowerChart: View {
     let samples: [Sample]
     var height: CGFloat = 220
+    var domain: ClosedRange<Date>? = nil
     @State private var selected: Date?
 
     private var nearest: Sample? {
@@ -119,6 +120,7 @@ struct PowerChart: View {
             }
         }
         .chartForegroundStyleScale(domain: Part.allCases.map(\.rawValue), range: Part.allCases.map(Theme.color))
+        .chartXScale(domain: domain ?? ((samples.first?.t ?? Date())...(samples.last?.t ?? Date())))
         .chartLegend(.hidden)
         .chartXSelection(value: $selected)
         .chartYAxis {
@@ -197,6 +199,7 @@ struct ChargePoint: Identifiable {
 struct ChargeChart: View {
     let points: [ChargePoint]
     var height: CGFloat = 160
+    var domain: ClosedRange<Date>? = nil
     @State private var selected: Date?
 
     private var acBands: [(Date, Date)] {
@@ -237,6 +240,7 @@ struct ChargeChart: View {
             }
         }
         .chartYScale(domain: 0...100)
+        .chartXScale(domain: domain ?? ((points.first?.t ?? Date())...(points.last?.t ?? Date())))
         .chartXSelection(value: $selected)
         .chartYAxis {
             AxisMarks(position: .leading, values: [0, 25, 50, 75, 100]) { v in
