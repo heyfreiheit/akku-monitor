@@ -167,9 +167,12 @@ final class EnergyModelSampler {
 
 // MARK: - Prozessor-Energie pro App (proc_pid_rusage, ri_energy_nj)
 
+enum ChromeKind { case renderer, gpu, helper, browser }
+
 struct AppIdentity {
     let name: String
     let bundlePath: String?
+    var chromeKind: ChromeKind? = nil
 }
 
 final class ProcessEnergySampler {
@@ -177,8 +180,12 @@ final class ProcessEnergySampler {
     private var identity: [pid_t: AppIdentity] = [:]
     private var lastTime: Date?
     private(set) var bundlePaths: [String: String] = [:]
+    /// Joule je Chrome-Prozess aus dem letzten Lauf, mit Prozessart.
+    private(set) var chromeJoules: [pid_t: (kind: ChromeKind, joules: Double)] = [:]
 
-    func reset() { lastTime = nil; last = [:] }
+    func reset() { lastTime = nil; last = [:]; chromeJoules = [:] }
+
+    func chromeKind(of p: pid_t) -> ChromeKind? { (identity[p] ?? resolve(p)).chromeKind }
 
     /// Joule pro App seit dem letzten Aufruf plus Zeitabstand. nil beim ersten Lauf oder nach Ruhezustand.
     func sample() -> (dt: Double, joules: [String: Double])? {
@@ -187,6 +194,7 @@ final class ProcessEnergySampler {
         var current: [pid_t: UInt64] = [:]
         current.reserveCapacity(pids.count)
         var result: [String: Double] = [:]
+        var chrome: [pid_t: (kind: ChromeKind, joules: Double)] = [:]
         let valid: Bool = {
             guard let lt = lastTime else { return false }
             let dt = now.timeIntervalSince(lt)
@@ -206,12 +214,14 @@ final class ProcessEnergySampler {
             if valid && delta > 0 {
                 let id = identity[p] ?? resolve(p)
                 result[id.name, default: 0] += Double(delta) / 1e9
+                if let k = id.chromeKind { chrome[p] = (k, Double(delta) / 1e9) }
             }
         }
         for p in identity.keys where current[p] == nil { identity[p] = nil }
         let dt = lastTime.map { now.timeIntervalSince($0) } ?? 0
         last = current
         lastTime = now
+        chromeJoules = valid ? chrome : [:]
         return valid ? (dt, result) : nil
     }
 
@@ -219,10 +229,22 @@ final class ProcessEnergySampler {
         var buf = [CChar](repeating: 0, count: 4096)
         proc_pidpath(p, &buf, UInt32(buf.count))
         let path = String(cString: buf)
-        let id = Self.identify(path: path, pid: p)
+        var id = Self.identify(path: path, pid: p)
+        // Chromes Grafikprozess heißt wie die Hilfsdienste, erkennbar nur am Startparameter.
+        if id.chromeKind == .helper, Self.arguments(p)?.contains("--type=gpu-process") == true { id.chromeKind = .gpu }
         identity[p] = id
         if let bp = id.bundlePath { bundlePaths[id.name] = bp }
         return id
+    }
+
+    /// Startparameter eines Prozesses (nur für Prozesse des eigenen Nutzers lesbar).
+    static func arguments(_ pid: pid_t) -> String? {
+        var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
+        var size = 0
+        guard sysctl(&mib, 3, nil, &size, nil, 0) == 0, size > 0 else { return nil }
+        var buf = [UInt8](repeating: 0, count: size)
+        guard sysctl(&mib, 3, &buf, &size, nil, 0) == 0 else { return nil }
+        return String(decoding: buf.prefix(size).map { $0 == 0 ? 32 : $0 }, as: UTF8.self)
     }
 
     static func identify(path: String, pid: pid_t) -> AppIdentity {
@@ -232,7 +254,12 @@ final class ProcessEnergySampler {
         for c in comps {
             prefix += "/" + c
             if let r = c.range(of: ".app"), c.hasSuffix(".app") || c.hasSuffix(".app.bundle") {
-                return AppIdentity(name: String(c[..<r.lowerBound]), bundlePath: prefix)
+                let name = String(c[..<r.lowerBound])
+                var kind: ChromeKind?
+                if name == "Google Chrome" {
+                    kind = path.contains("(Renderer)") ? .renderer : path.contains("(GPU)") ? .gpu : path.contains("Helper") ? .helper : .browser
+                }
+                return AppIdentity(name: name, bundlePath: prefix, chromeKind: kind)
             }
         }
         let exe = comps.last ?? path

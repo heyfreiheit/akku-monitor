@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Akku Monitor – Tabs",
+  "version": "1.0",
+  "description": "Meldet der Mac-App Akku Monitor deine Tabs, damit sie den Stromverbrauch pro Tab messen kann. Alles bleibt lokal auf deinem Mac.",
+  "permissions": ["tabs", "scripting", "alarms"],
+  "host_permissions": ["<all_urls>", "http://127.0.0.1:47830/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Akku Monitor",
+    "default_icon": { "16": "icon16.png", "32": "icon32.png", "48": "icon48.png" }
+  },
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+}

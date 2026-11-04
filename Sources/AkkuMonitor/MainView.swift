@@ -6,6 +6,7 @@ enum Section: String, CaseIterable, Identifiable {
     case overview = "Übersicht"
     case history = "Verlauf"
     case apps = "Apps"
+    case chrome = "Chrome-Tabs"
     case sleep = "Ruhezustand"
     case health = "Akku-Zustand"
     case settings = "Einstellungen"
@@ -15,6 +16,7 @@ enum Section: String, CaseIterable, Identifiable {
         case .overview: "gauge.with.dots.needle.33percent"
         case .history: "chart.xyaxis.line"
         case .apps: "square.grid.2x2"
+        case .chrome: "globe"
         case .sleep: "moon"
         case .health: "heart.text.square"
         case .settings: "gearshape"
@@ -39,6 +41,7 @@ struct MainView: View {
                     case .overview: OverviewView()
                     case .history: HistoryView()
                     case .apps: AppsView()
+                    case .chrome: ChromeView()
                     case .sleep: SleepView()
                     case .health: HealthView()
                     case .settings: SettingsView()
@@ -261,14 +264,14 @@ struct AppsView: View {
                             .foregroundStyle(Theme.single)
                             .clipShape(UnevenRoundedRectangle(bottomTrailingRadius: 4, topTrailingRadius: 4))
                             .annotation(position: .trailing, spacing: 6) {
-                                Text("\(Fmt.num(a.wh, a.wh < 10 ? 1 : 0)) Wh · \(Int((a.share * 100).rounded())) %")
+                                Text("\(Fmt.wh(a.wh)) · \(Int((a.share * 100).rounded())) %")
                                     .font(.caption).foregroundStyle(.secondary).monospacedDigit()
                             }
                     }
                     .chartXAxis {
                         AxisMarks { v in
                             AxisGridLine().foregroundStyle(Color.primary.opacity(0.06))
-                            AxisValueLabel { if let d = v.as(Double.self) { Text("\(Fmt.num(d, 0)) Wh") } }
+                            AxisValueLabel { if let d = v.as(Double.self) { Text(Fmt.wh(d)) } }
                         }
                     }
                     .chartYAxis {
@@ -422,6 +425,7 @@ struct SettingsView: View {
     @AppStorage("alertsEnabled") private var alerts = true
     @AppStorage("alertWatts") private var alertWatts = 20.0
     @AppStorage("alertAppWatts") private var alertAppWatts = 4.0
+    @AppStorage("alertTabWatts") private var alertTabWatts = 1.5
     @AppStorage("menuMode") private var menuMode = "watt"
     @State private var loginItem = SMAppService.mainApp.status == .enabled
 
@@ -447,6 +451,12 @@ struct SettingsView: View {
                 Text("Einzelne App ab")
                 Slider(value: $alertAppWatts, in: 1...15, step: 0.5).frame(maxWidth: 240)
                 Text("\(Fmt.num(alertAppWatts)) W Prozessor").monospacedDigit().foregroundStyle(.secondary)
+            }
+            .disabled(!alerts)
+            HStack {
+                Text("Einzelner Chrome-Tab ab")
+                Slider(value: $alertTabWatts, in: 0.5...6, step: 0.5).frame(maxWidth: 240)
+                Text("\(Fmt.num(alertTabWatts)) W Prozessor").monospacedDigit().foregroundStyle(.secondary)
             }
             .disabled(!alerts)
             HStack {

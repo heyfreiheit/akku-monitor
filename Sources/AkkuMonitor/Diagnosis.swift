@@ -68,6 +68,18 @@ enum Diagnosis {
             if first.name.contains("Claude") || first.name.contains("Electron") || first.name.contains("Grok") { d += " Electron-Apps laufen im Hintergrund weiter. Schließ sie ganz, wenn du sie nicht brauchst." }
             out.append(Finding(level: .warning, title: "\(first.name) ist der größte App-Verbraucher", detail: d))
         }
+        let chromeIsBig = apps.prefix(3).contains { $0.name == "Google Chrome" }
+        if m.chromeConnected {
+            let sites = m.siteTotals(since: week, batteryOnly: false)
+            if let s = sites.first, s.share > 0.3, s.wh > 0.3 {
+                out.append(Finding(level: .warning, title: "\(s.name) ist dein teuerster Tab", detail: "Tabs von \(s.name) haben \(Int(s.share * 100)) % der gemessenen Tab-Energie gebraucht. Unter Chrome-Tabs siehst du, welcher Tab gerade wie viel zieht."))
+            }
+            if let t = m.tabAverages().first, t.watts > 1.5 {
+                out.append(Finding(level: .warning, title: "Ein Tab zieht gerade \(Fmt.watts(t.watts))", detail: "„\(t.tab.title)“ (\(t.tab.host)) rechnet gerade dauerhaft. Auf Akku sind das allein über \(Int(t.watts / max(m.batteryAverage(since: week)?.watts ?? 16, 1) * 100)) % deines Verbrauchs."))
+            }
+        } else if chromeIsBig || m.liveApps.prefix(3).contains(where: { $0.name == "Google Chrome" }) {
+            out.append(Finding(level: .info, title: "Chrome verbinden für Tab-Werte", detail: "Chrome gehört zu deinen größten Verbrauchern. Unter Chrome-Tabs kannst du die Erweiterung in zwei Minuten einrichten, dann siehst du, welcher Tab wie viel zieht."))
+        }
         let heavy = apps.filter { ["Spotlight-Indexierung", "Fotos-Analyse", "iCloud Drive", "Google Drive", "Dropbox", "Time Machine"].contains($0.name) && $0.share > 0.08 }
         for h in heavy {
             out.append(Finding(level: .info, title: "\(h.name) läuft im Hintergrund", detail: "\(h.name) hat \(Int(h.share * 100)) % der Prozessor-Energie auf Akku gebraucht. Das ist meist vorübergehend, etwa nach großen Datei-Änderungen. Bleibt es dauerhaft hoch, lohnt ein Blick in die Einstellungen der App."))

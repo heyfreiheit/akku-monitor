@@ -105,7 +105,6 @@ enum Part: String, CaseIterable, Identifiable {
 final class Store {
     let dir: URL
     private var samplesURL: URL { dir.appendingPathComponent("samples.jsonl") }
-    private var appsURL: URL { dir.appendingPathComponent("apps.json") }
     private let encoder: JSONEncoder = { let e = JSONEncoder(); e.dateEncodingStrategy = .secondsSince1970; return e }()
     private let decoder: JSONDecoder = { let d = JSONDecoder(); d.dateDecodingStrategy = .secondsSince1970; return d }()
     static let keepDays: Double = 60
@@ -148,15 +147,15 @@ final class Store {
         try? data.write(to: samplesURL, options: .atomic)
     }
 
-    func loadApps() -> [AppHour] {
-        guard let data = try? Data(contentsOf: appsURL),
+    func loadApps(_ file: String = "apps.json") -> [AppHour] {
+        guard let data = try? Data(contentsOf: dir.appendingPathComponent(file)),
               let a = try? decoder.decode([AppHour].self, from: data) else { return [] }
         let cutoff = Date().addingTimeInterval(-Self.keepDays * 86400)
         return a.filter { $0.hour >= cutoff }
     }
 
-    func saveApps(_ a: [AppHour]) {
-        if let data = try? encoder.encode(a) { try? data.write(to: appsURL, options: .atomic) }
+    func saveApps(_ a: [AppHour], _ file: String = "apps.json") {
+        if let data = try? encoder.encode(a) { try? data.write(to: dir.appendingPathComponent(file), options: .atomic) }
     }
 }
 
@@ -178,6 +177,12 @@ enum Fmt {
     static func hours(_ h: Double) -> String {
         guard h.isFinite, h > 0 else { return "–" }
         return duration(h * 3600)
+    }
+
+    static func wh(_ v: Double) -> String {
+        if v == 0 { return "0 Wh" }
+        if v < 0.1 { return "\(num(v * 1000, 0)) mWh" }
+        return "\(num(v, v < 10 ? 1 : 0)) Wh"
     }
 
     static func num(_ v: Double, _ digits: Int = 1) -> String {

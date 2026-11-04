@@ -74,6 +74,22 @@ struct MenuContent: View {
             }
             Divider()
             topApps
+            if m.chromeConnected, !m.chromeLive.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Größte Chrome-Tabs").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    ForEach(Array(m.chromeLive.filter { $0.watts >= 0.05 }.prefix(3))) { t in
+                        HStack(spacing: 8) {
+                            Image(systemName: t.tab.audible ? "speaker.wave.2.fill" : "globe").foregroundStyle(.tertiary).frame(width: 16)
+                            Text(t.tab.title.isEmpty ? t.tab.host : t.tab.title).lineLimit(1)
+                            Spacer()
+                            Text(Fmt.watts(t.watts)).monospacedDigit().foregroundStyle(.secondary)
+                        }
+                        .font(.callout)
+                        .help(t.tab.host)
+                    }
+                }
+            }
             if !m.blockers.isEmpty {
                 Divider()
                 VStack(alignment: .leading, spacing: 4) {
